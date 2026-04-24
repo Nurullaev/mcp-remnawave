@@ -230,8 +230,8 @@ export class RemnawaveClient {
         return this.post(REST_API.NODES.ACTIONS.RESET_TRAFFIC(uuid));
     }
 
-    async reorderNodes(uuids: string[]) {
-        return this.post(REST_API.NODES.ACTIONS.REORDER, uuids);
+    async reorderNodes(nodes: { uuid: string; viewPosition: number }[]) {
+        return this.post(REST_API.NODES.ACTIONS.REORDER, { nodes });
     }
 
     async bulkNodeProfileModification(params: Record<string, unknown>) {
@@ -579,15 +579,28 @@ export class RemnawaveClient {
     }
 
     async createSnippet(params: Record<string, unknown>) {
-        return this.post(REST_API.SNIPPETS.CREATE, params);
+        const body: Record<string, unknown> = { name: params.name };
+        if (params.snippet !== undefined) {
+            body.snippet = typeof params.snippet === 'string'
+                ? JSON.parse(params.snippet as string)
+                : params.snippet;
+        }
+        return this.post(REST_API.SNIPPETS.CREATE, body);
     }
 
     async updateSnippet(params: Record<string, unknown>) {
-        return this.patch(REST_API.SNIPPETS.UPDATE, params);
+        const body: Record<string, unknown> = { name: params.name };
+        if (params.newName !== undefined) body.name = params.newName;
+        if (params.snippet !== undefined) {
+            body.snippet = typeof params.snippet === 'string'
+                ? JSON.parse(params.snippet as string)
+                : params.snippet;
+        }
+        return this.patch(REST_API.SNIPPETS.UPDATE, body);
     }
 
     async deleteSnippet(params: Record<string, unknown>) {
-        return this.post(REST_API.SNIPPETS.DELETE, params);
+        return this.request('DELETE', REST_API.SNIPPETS.DELETE as string, { name: params.name });
     }
 
     // External Squads

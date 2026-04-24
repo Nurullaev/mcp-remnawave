@@ -108,6 +108,7 @@ export function registerInboundTools(
         {
             uuid: z.string().describe('Profile UUID'),
             name: z.string().optional().describe('New name'),
+            config: z.record(z.unknown()).optional().describe('Full Xray config object'),
         },
         async (params) => {
             try {
@@ -137,13 +138,20 @@ export function registerInboundTools(
 
     server.tool(
         'config_profiles_reorder',
-        'Reorder config profiles',
+        'Reorder config profiles by providing each profile UUID with its new position',
         {
-            uuids: z.array(z.string()).describe('Ordered array of profile UUIDs'),
+            items: z
+                .array(
+                    z.object({
+                        uuid: z.string().describe('Config profile UUID'),
+                        viewPosition: z.number().int().describe('New position (0-based)'),
+                    }),
+                )
+                .describe('Array of config profiles with their new positions'),
         },
-        async (params) => {
+        async ({ items }) => {
             try {
-                const result = await client.reorderConfigProfiles(params);
+                const result = await client.reorderConfigProfiles({ items });
                 return toolResult(result);
             } catch (e) {
                 return toolError(e);

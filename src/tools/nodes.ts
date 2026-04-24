@@ -261,15 +261,20 @@ export function registerNodeTools(server: McpServer, client: RemnawaveClient, re
 
     server.tool(
         'nodes_reorder',
-        'Reorder nodes by providing an ordered array of UUIDs',
+        'Reorder nodes by providing each node UUID with its new position',
         {
-            uuids: z
-                .array(z.string())
-                .describe('Ordered array of node UUIDs'),
+            nodes: z
+                .array(
+                    z.object({
+                        uuid: z.string().describe('Node UUID'),
+                        viewPosition: z.number().int().describe('New position (0-based)'),
+                    }),
+                )
+                .describe('Array of nodes with their new positions'),
         },
-        async ({ uuids }) => {
+        async ({ nodes }) => {
             try {
-                const result = await client.reorderNodes(uuids);
+                const result = await client.reorderNodes(nodes);
                 return toolResult(result);
             } catch (e) {
                 return toolError(e);
