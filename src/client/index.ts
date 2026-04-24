@@ -104,6 +104,10 @@ export class RemnawaveClient {
         return this.get(REST_API.USERS.GET_BY.ID(id));
     }
 
+    async getUserAccessibleNodes(uuid: string) {
+        return this.get(REST_API.USERS.ACCESSIBLE_NODES(uuid));
+    }
+
     async getUserBySubscriptionUuid(subscriptionUuid: string) {
         return this.get(REST_API.USERS.GET_BY.SUBSCRIPTION_UUID(subscriptionUuid));
     }
@@ -292,6 +296,10 @@ export class RemnawaveClient {
         return this.post(REST_API.HOSTS.BULK.SET_PORT, params);
     }
 
+    async reorderHosts(hosts: { uuid: string; viewPosition: number }[]) {
+        return this.post(REST_API.HOSTS.ACTIONS.REORDER, { hosts });
+    }
+
     // System
 
     async getStats() {
@@ -418,6 +426,10 @@ export class RemnawaveClient {
         return this.get(REST_API.INTERNAL_SQUADS.GET);
     }
 
+    async getInternalSquadByUuid(uuid: string) {
+        return this.get(REST_API.INTERNAL_SQUADS.GET_BY_UUID(uuid));
+    }
+
     async getSquadAccessibleNodes(uuid: string) {
         return this.get(REST_API.INTERNAL_SQUADS.ACCESSIBLE_NODES(uuid));
     }
@@ -432,6 +444,10 @@ export class RemnawaveClient {
 
     async deleteInternalSquad(uuid: string) {
         return this.delete(REST_API.INTERNAL_SQUADS.DELETE(uuid));
+    }
+
+    async reorderInternalSquads(params: Record<string, unknown>) {
+        return this.post(REST_API.INTERNAL_SQUADS.ACTIONS.REORDER, params);
     }
 
     async addUsersToSquad(squadUuid: string, userUuids: string[]) {
@@ -767,5 +783,41 @@ export class RemnawaveClient {
 
     async upsertUserMetadata(uuid: string, params: Record<string, unknown>) {
         return this.put(REST_API.METADATA.USER.UPSERT(uuid), params);
+    }
+
+    // Subscription Settings
+
+    async getSubscriptionSettings() {
+        return this.get(REST_API.SUBSCRIPTION_SETTINGS.GET);
+    }
+
+    async updateSubscriptionSettings(params: Record<string, unknown>) {
+        return this.patch(REST_API.SUBSCRIPTION_SETTINGS.UPDATE, params);
+    }
+
+    // Subscription Templates
+
+    async getSubscriptionTemplates() {
+        return this.get(REST_API.SUBSCRIPTION_TEMPLATE.GET_ALL);
+    }
+
+    async getSubscriptionTemplateByUuid(uuid: string) {
+        return this.get(REST_API.SUBSCRIPTION_TEMPLATE.GET(uuid));
+    }
+
+    async createSubscriptionTemplate(params: Record<string, unknown>) {
+        return this.post(REST_API.SUBSCRIPTION_TEMPLATE.CREATE, params);
+    }
+
+    async updateSubscriptionTemplate(params: Record<string, unknown>) {
+        return this.patch(REST_API.SUBSCRIPTION_TEMPLATE.UPDATE, params);
+    }
+
+    async deleteSubscriptionTemplate(uuid: string) {
+        return this.delete(REST_API.SUBSCRIPTION_TEMPLATE.DELETE(uuid));
+    }
+
+    async reorderSubscriptionTemplates(params: Record<string, unknown>) {
+        return this.post(REST_API.SUBSCRIPTION_TEMPLATE.ACTIONS.REORDER, params);
     }
 }

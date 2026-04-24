@@ -272,4 +272,22 @@ export function registerHostTools(server: McpServer, client: RemnawaveClient, re
             try { return toolResult(await client.bulkSetHostPort(params)); } catch (e) { return toolError(e); }
         },
     );
+
+    server.tool(
+        'hosts_reorder',
+        'Reorder hosts by providing each host UUID with its new position',
+        {
+            hosts: z
+                .array(
+                    z.object({
+                        uuid: z.string().describe('Host UUID'),
+                        viewPosition: z.number().int().describe('New position (0-based)'),
+                    }),
+                )
+                .describe('Array of hosts with their new positions'),
+        },
+        async ({ hosts }) => {
+            try { return toolResult(await client.reorderHosts(hosts)); } catch (e) { return toolError(e); }
+        },
+    );
 }
