@@ -81,6 +81,18 @@ export function registerNodeTools(server: McpServer, client: RemnawaveClient, re
                 .number()
                 .optional()
                 .describe('Traffic consumption multiplier'),
+            nodeConsumptionMultiplier: z
+                .number()
+                .optional()
+                .describe('Per-node traffic consumption multiplier (0.0–100.0)'),
+            note: z
+                .string()
+                .optional()
+                .describe('Free-form note (max 255 chars)'),
+            proxyUrl: z
+                .string()
+                .optional()
+                .describe('SOCKS5 proxy URL: socks5://[user:pass@]host:port'),
             activeConfigProfileUuid: z
                 .string()
                 .describe('Config profile UUID to assign'),
@@ -113,6 +125,10 @@ export function registerNodeTools(server: McpServer, client: RemnawaveClient, re
                     body.notifyPercent = params.notifyPercent;
                 if (params.consumptionMultiplier !== undefined)
                     body.consumptionMultiplier = params.consumptionMultiplier;
+                if (params.nodeConsumptionMultiplier !== undefined)
+                    body.nodeConsumptionMultiplier = params.nodeConsumptionMultiplier;
+                if (params.note !== undefined) body.note = params.note;
+                if (params.proxyUrl !== undefined) body.proxyUrl = params.proxyUrl;
 
                 const result = await client.createNode(body);
                 return toolResult(result);
@@ -151,6 +167,20 @@ export function registerNodeTools(server: McpServer, client: RemnawaveClient, re
                 .number()
                 .optional()
                 .describe('New consumption multiplier'),
+            nodeConsumptionMultiplier: z
+                .number()
+                .optional()
+                .describe('New per-node consumption multiplier (0.0–100.0)'),
+            note: z
+                .string()
+                .nullable()
+                .optional()
+                .describe('Free-form note (max 255 chars, null to clear)'),
+            proxyUrl: z
+                .string()
+                .nullable()
+                .optional()
+                .describe('SOCKS5 proxy URL: socks5://[user:pass@]host:port (null to clear)'),
         },
         async (params) => {
             try {
@@ -218,10 +248,14 @@ export function registerNodeTools(server: McpServer, client: RemnawaveClient, re
         'Restart a specific node',
         {
             uuid: z.string().describe('Node UUID'),
+            forceRestart: z
+                .boolean()
+                .default(false)
+                .describe('Force restart even if the node is unreachable'),
         },
-        async ({ uuid }) => {
+        async ({ uuid, forceRestart }) => {
             try {
-                const result = await client.restartNode(uuid);
+                const result = await client.restartNode(uuid, forceRestart);
                 return toolResult(result);
             } catch (e) {
                 return toolError(e);
@@ -232,10 +266,15 @@ export function registerNodeTools(server: McpServer, client: RemnawaveClient, re
     server.tool(
         'nodes_restart_all',
         'Restart all nodes',
-        {},
-        async () => {
+        {
+            forceRestart: z
+                .boolean()
+                .default(false)
+                .describe('Force restart even for unreachable nodes'),
+        },
+        async ({ forceRestart }) => {
             try {
-                const result = await client.restartAllNodes();
+                const result = await client.restartAllNodes(forceRestart);
                 return toolResult(result);
             } catch (e) {
                 return toolError(e);
@@ -320,13 +359,24 @@ export function registerNodeTools(server: McpServer, client: RemnawaveClient, re
         'nodes_bulk_update',
         'Bulk update properties for selected nodes',
         {
-            nodeUuids: z.array(z.string()).describe('Array of node UUIDs'),
+            uuids: z.array(z.string()).describe('Array of node UUIDs to update'),
             countryCode: z.string().optional().describe('New country code'),
-            consumptionMultiplier: z.number().optional().describe('New consumption multiplier'),
+            consumptionMultiplier: z.number().optional().describe('New consumption multiplier (0.0–100.0)'),
+            nodeConsumptionMultiplier: z.number().optional().describe('New per-node consumption multiplier (0.0–100.0)'),
+            note: z.string().nullable().optional().describe('Free-form note (max 255 chars, null to clear)'),
+            tags: z
+                .array(z.string())
+                .optional()
+                .describe('Tags (uppercase letters, numbers, underscores, colons; max 36 chars each, up to 10)'),
         },
         async (params) => {
             try {
-                const result = await client.bulkUpdateNodes(params);
+                const { uuids, ...fields } = params;
+                const cleanFields: Record<string, unknown> = {};
+                for (const [k, v] of Object.entries(fields)) {
+                    if (v !== undefined) cleanFields[k] = v;
+                }
+                const result = await client.bulkUpdateNodes({ uuids, fields: cleanFields });
                 return toolResult(result);
             } catch (e) {
                 return toolError(e);

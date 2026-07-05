@@ -36,6 +36,37 @@ export function registerSystemTools(
     );
 
     server.tool(
+        'bandwidth_stats_users_by_nodes',
+        'Get top per-user bandwidth usage across the given nodes for a date range',
+        {
+            nodesUuids: z
+                .array(z.string())
+                .min(1)
+                .describe('Array of node UUIDs (at least one)'),
+            start: z.string().describe('Start date (YYYY-MM-DD)'),
+            end: z.string().describe('End date (YYYY-MM-DD)'),
+            topUsersLimit: z
+                .number()
+                .int()
+                .optional()
+                .describe('Max number of top users to return (default 100)'),
+        },
+        async ({ nodesUuids, start, end, topUsersLimit }) => {
+            try {
+                const result = await client.getUsersUsageByNodes(
+                    nodesUuids,
+                    start,
+                    end,
+                    topUsersLimit,
+                );
+                return toolResult(result);
+            } catch (e) {
+                return toolError(e);
+            }
+        },
+    );
+
+    server.tool(
         'system_nodes_metrics',
         'Get detailed node metrics',
         {},

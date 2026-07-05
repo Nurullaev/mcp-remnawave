@@ -10,14 +10,14 @@
 
 MCP server ([Model Context Protocol](https://modelcontextprotocol.io)) providing LLM clients (Claude Desktop, Cursor, Windsurf, etc.) with tools to manage a [Remnawave](https://github.com/remnawave/) VPN panel.
 
-**Version:** 1.3.0 | **Remnawave API:** 2.7.4
+**Version:** 1.4.0 | **Remnawave API:** 2.8.0
 
 ### Features
 
 - **166 tools** — full management of users, nodes, hosts, subscriptions, squads, HWID, config profiles, inbounds, API tokens, billing, snippets, external squads, settings, subscription settings, subscription templates, subscription page configs, node plugins, IP control, and metadata
 - **3 resources** — real-time panel stats, node status, health checks
 - **5 prompts** — guided workflows for common tasks
-- **Readonly mode** — restrict to 75 read-only tools for safe monitoring
+- **Readonly mode** — restrict to 76 read-only tools for safe monitoring
 - **Caddy support** — `X-Api-Key` header for panels behind Caddy with custom path
 - **Type-safe** — built on [@remnawave/backend-contract](https://www.npmjs.com/package/@remnawave/backend-contract) for API route validation
 - **stdio transport** — works with Claude Desktop, Cursor, Windsurf, and any MCP-compatible client
@@ -69,14 +69,14 @@ Set `REMNAWAVE_READONLY=true` to disable all write operations (create, update, d
 
 Useful for monitoring dashboards or shared environments where you want to prevent accidental changes.
 
-In readonly mode, the available tools are reduced from 166 to 75:
+In readonly mode, the available tools are reduced from 166 to 76:
 
 | Category | Available tools |
 |----------|----------------|
 | Users (12) | `users_list`, `users_get`, `users_get_by_username`, `users_get_by_short_uuid`, `users_get_by_telegram_id`, `users_get_by_email`, `users_get_by_tag`, `users_get_by_subscription_uuid`, `users_get_by_id`, `users_accessible_nodes`, `users_tags_list`, `users_resolve` |
 | Nodes (3) | `nodes_list`, `nodes_get`, `nodes_tags_list` |
 | Hosts (3) | `hosts_list`, `hosts_get`, `hosts_tags_list` |
-| System (10) | all tools (read-only by nature) |
+| System (11) | all tools (read-only by nature), incl. `bandwidth_stats_users_by_nodes` |
 | Subscriptions (10) | all tools (read-only by nature) |
 | Config Profiles & Inbounds (5) | `config_profiles_list`, `config_profiles_get`, `inbounds_list`, `config_profiles_get_inbounds`, `config_profiles_get_computed_config` |
 | Internal Squads (3) | `squads_list`, `squads_get`, `squads_accessible_nodes` |
@@ -201,29 +201,29 @@ Environment variables are passed via `.env` file or `docker-compose.yml`.
 | `nodes_bulk_actions` | Bulk node actions | write |
 | `nodes_bulk_update` | Bulk update nodes | write |
 
-#### Hosts (12 tools)
+#### Hosts (11 tools)
 
 | Tool | Description | Mode |
 |------|-------------|------|
 | `hosts_list` | List all hosts | read |
 | `hosts_get` | Get host by UUID | read |
 | `hosts_tags_list` | List all host tags | read |
-| `hosts_create` | Create a new host | write |
-| `hosts_update` | Update host settings | write |
+| `hosts_create` | Create a new host (tags, cert pinning, mihomoIpVersion) | write |
+| `hosts_update` | Update host settings (tags, cert pinning, mihomoIpVersion) | write |
 | `hosts_delete` | Delete a host | write |
 | `hosts_bulk_enable` | Bulk enable hosts | write |
 | `hosts_bulk_disable` | Bulk disable hosts | write |
 | `hosts_bulk_delete` | Bulk delete hosts | write |
-| `hosts_bulk_set_inbound` | Bulk set host inbound | write |
-| `hosts_bulk_set_port` | Bulk set host port | write |
+| `hosts_bulk_update` | Bulk update host fields (port, inbound, tags, etc.) | write |
 | `hosts_reorder` | Reorder hosts | write |
 
-#### System (10 tools)
+#### System (11 tools)
 
 | Tool | Description | Mode |
 |------|-------------|------|
 | `system_stats` | Panel statistics (users, nodes, traffic, CPU, memory) | read |
 | `system_bandwidth_stats` | Bandwidth statistics | read |
+| `bandwidth_stats_users_by_nodes` | Top per-user bandwidth usage across nodes for a date range | read |
 | `system_nodes_metrics` | Node metrics | read |
 | `system_nodes_statistics` | Node statistics | read |
 | `system_health` | Panel health check | read |
@@ -460,8 +460,8 @@ src/
 │   ├── index.ts                   # Tool registration
 │   ├── users.ts                   # User management (29 tools)
 │   ├── nodes.ts                   # Node management (15 tools)
-│   ├── hosts.ts                   # Host management (12 tools)
-│   ├── system.ts                  # System & auth (10 tools)
+│   ├── hosts.ts                   # Host management (11 tools)
+│   ├── system.ts                  # System & auth (11 tools)
 │   ├── subscriptions.ts           # Subscriptions (10 tools)
 │   ├── inbounds.ts                # Config profiles & inbounds (9 tools)
 │   ├── squads.ts                  # Internal squads (9 tools)
@@ -496,14 +496,14 @@ MIT
 
 MCP-сервер ([Model Context Protocol](https://modelcontextprotocol.io)), предоставляющий LLM-клиентам (Claude Desktop, Cursor, Windsurf и др.) инструменты для управления VPN-панелью [Remnawave](https://github.com/remnawave/).
 
-**Версия:** 1.3.0 | **Remnawave API:** 2.7.4
+**Версия:** 1.4.0 | **Remnawave API:** 2.8.0
 
 ### Возможности
 
 - **166 инструментов** — полное управление пользователями, нодами, хостами, подписками, группами, HWID, конфиг-профилями, inbounds, API-токенами, биллингом, сниппетами, внешними группами, настройками, настройками подписок, шаблонами подписок, страницами подписок, плагинами нод, IP-контролем и метаданными
 - **3 ресурса** — статистика панели, статус нод, проверка здоровья в реальном времени
 - **5 промптов** — пошаговые сценарии для типичных задач
-- **Readonly-режим** — ограничение до 75 инструментов только для чтения
+- **Readonly-режим** — ограничение до 76 инструментов только для чтения
 - **Поддержка Caddy** — заголовок `X-Api-Key` для панелей за Caddy с кастомным путём
 - **Type-safe** — построен на [@remnawave/backend-contract](https://www.npmjs.com/package/@remnawave/backend-contract) для валидации API-маршрутов
 - **stdio транспорт** — работает с Claude Desktop, Cursor, Windsurf и любым MCP-совместимым клиентом
@@ -555,14 +555,14 @@ REMNAWAVE_API_KEY=ваш-caddy-api-ключ
 
 Полезно для мониторинговых дашбордов или общих окружений, где нужно исключить случайные изменения.
 
-В readonly-режиме количество доступных инструментов сокращается с 166 до 75:
+В readonly-режиме количество доступных инструментов сокращается с 166 до 76:
 
 | Категория | Доступные инструменты |
 |-----------|----------------------|
 | Пользователи (12) | `users_list`, `users_get`, `users_get_by_username`, `users_get_by_short_uuid`, `users_get_by_telegram_id`, `users_get_by_email`, `users_get_by_tag`, `users_get_by_subscription_uuid`, `users_get_by_id`, `users_accessible_nodes`, `users_tags_list`, `users_resolve` |
 | Ноды (3) | `nodes_list`, `nodes_get`, `nodes_tags_list` |
 | Хосты (3) | `hosts_list`, `hosts_get`, `hosts_tags_list` |
-| Система (10) | все инструменты (только чтение по природе) |
+| Система (11) | все инструменты (только чтение по природе), вкл. `bandwidth_stats_users_by_nodes` |
 | Подписки (10) | все инструменты (только чтение по природе) |
 | Конфиг-профили и Inbounds (5) | `config_profiles_list`, `config_profiles_get`, `inbounds_list`, `config_profiles_get_inbounds`, `config_profiles_get_computed_config` |
 | Внутренние группы (3) | `squads_list`, `squads_get`, `squads_accessible_nodes` |
@@ -687,29 +687,29 @@ docker compose up -d
 | `nodes_bulk_actions` | Массовые действия с нодами | write |
 | `nodes_bulk_update` | Массовое обновление нод | write |
 
-#### Хосты (12 инструментов)
+#### Хосты (11 инструментов)
 
 | Инструмент | Описание | Режим |
 |------------|----------|-------|
 | `hosts_list` | Список всех хостов | read |
 | `hosts_get` | Получить хост по UUID | read |
 | `hosts_tags_list` | Список тегов хостов | read |
-| `hosts_create` | Создать новый хост | write |
-| `hosts_update` | Обновить настройки хоста | write |
+| `hosts_create` | Создать новый хост (tags, cert pinning, mihomoIpVersion) | write |
+| `hosts_update` | Обновить настройки хоста (tags, cert pinning, mihomoIpVersion) | write |
 | `hosts_delete` | Удалить хост | write |
 | `hosts_bulk_enable` | Массовое включение хостов | write |
 | `hosts_bulk_disable` | Массовое отключение хостов | write |
 | `hosts_bulk_delete` | Массовое удаление хостов | write |
-| `hosts_bulk_set_inbound` | Массовая установка inbound | write |
-| `hosts_bulk_set_port` | Массовая установка порта | write |
+| `hosts_bulk_update` | Массовое обновление полей хостов (порт, inbound, теги и т.д.) | write |
 | `hosts_reorder` | Переупорядочить хосты | write |
 
-#### Система (10 инструментов)
+#### Система (11 инструментов)
 
 | Инструмент | Описание | Режим |
 |------------|----------|-------|
 | `system_stats` | Статистика панели (пользователи, ноды, трафик, CPU, память) | read |
 | `system_bandwidth_stats` | Статистика пропускной способности | read |
+| `bandwidth_stats_users_by_nodes` | Топ потребления трафика по пользователям на нодах за период | read |
 | `system_nodes_metrics` | Метрики нод | read |
 | `system_nodes_statistics` | Статистика нод | read |
 | `system_health` | Проверка здоровья панели | read |
@@ -946,8 +946,8 @@ src/
 │   ├── index.ts                   # Регистрация инструментов
 │   ├── users.ts                   # Управление пользователями (29)
 │   ├── nodes.ts                   # Управление нодами (15)
-│   ├── hosts.ts                   # Управление хостами (12)
-│   ├── system.ts                  # Система и авторизация (10)
+│   ├── hosts.ts                   # Управление хостами (11)
+│   ├── system.ts                  # Система и авторизация (11)
 │   ├── subscriptions.ts           # Подписки (10)
 │   ├── inbounds.ts                # Конфиг-профили и inbounds (9)
 │   ├── squads.ts                  # Внутренние группы (9)

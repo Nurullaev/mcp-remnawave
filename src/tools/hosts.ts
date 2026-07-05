@@ -4,6 +4,10 @@ import { RemnawaveClient } from '../client/index.js';
 import { toolResult, toolError } from './helpers.js';
 
 const SUBSCRIPTION_TYPES = ['XRAY_JSON', 'XRAY_BASE64', 'MIHOMO', 'STASH', 'CLASH', 'SINGBOX'] as const;
+const ALPN_VALUES = ['h3', 'h2', 'http/1.1', 'h2,http/1.1', 'h3,h2,http/1.1', 'h3,h2'] as const;
+const MIHOMO_IP_VERSION = ['dual', 'ipv4', 'ipv6', 'ipv4-prefer', 'ipv6-prefer'] as const;
+const TAGS_DESC =
+    'Array of tags (uppercase letters, numbers, underscores and colons only; max 36 chars each, up to 10 tags)';
 
 export function registerHostTools(server: McpServer, client: RemnawaveClient, readonly: boolean) {
     server.tool(
@@ -65,27 +69,17 @@ export function registerHostTools(server: McpServer, client: RemnawaveClient, re
             configProfileInboundUuid: z
                 .string()
                 .describe('Config profile inbound UUID'),
-            path: z.string().optional().describe('URL path'),
-            sni: z.string().optional().describe('SNI (Server Name Indication)'),
-            host: z.string().optional().describe('Host header'),
+            path: z.string().nullish().describe('URL path'),
+            sni: z.string().nullish().describe('SNI (Server Name Indication)'),
+            host: z.string().nullish().describe('Host header'),
             alpn: z
-                .enum(['h3', 'h2', 'http/1.1', 'h2,http/1.1', 'h3,h2,http/1.1', 'h3,h2'])
+                .enum(ALPN_VALUES)
                 .optional()
                 .describe('ALPN protocol'),
             fingerprint: z
-                .enum([
-                    'chrome',
-                    'firefox',
-                    'safari',
-                    'ios',
-                    'android',
-                    'edge',
-                    'qq',
-                    'random',
-                    'randomized',
-                ])
+                .string()
                 .optional()
-                .describe('TLS fingerprint'),
+                .describe('TLS fingerprint (free-form, e.g. chrome, firefox, safari)'),
             isDisabled: z
                 .boolean()
                 .optional()
@@ -94,7 +88,22 @@ export function registerHostTools(server: McpServer, client: RemnawaveClient, re
                 .enum(['DEFAULT', 'TLS', 'NONE'])
                 .optional()
                 .describe('Security layer'),
-            tag: z.string().optional().describe('Host tag'),
+            tags: z
+                .array(z.string())
+                .optional()
+                .describe(TAGS_DESC),
+            pinnedPeerCertSha256: z
+                .string()
+                .nullish()
+                .describe('Pin peer certificate by SHA-256 fingerprint'),
+            verifyPeerCertByName: z
+                .string()
+                .nullish()
+                .describe('Verify peer certificate by name'),
+            mihomoIpVersion: z
+                .enum(MIHOMO_IP_VERSION)
+                .nullish()
+                .describe('IP version used by Mihomo clients'),
             serverDescription: z
                 .string()
                 .optional()
@@ -130,7 +139,13 @@ export function registerHostTools(server: McpServer, client: RemnawaveClient, re
                     body.isDisabled = params.isDisabled;
                 if (params.securityLayer !== undefined)
                     body.securityLayer = params.securityLayer;
-                if (params.tag !== undefined) body.tag = params.tag;
+                if (params.tags !== undefined) body.tags = params.tags;
+                if (params.pinnedPeerCertSha256 !== undefined)
+                    body.pinnedPeerCertSha256 = params.pinnedPeerCertSha256;
+                if (params.verifyPeerCertByName !== undefined)
+                    body.verifyPeerCertByName = params.verifyPeerCertByName;
+                if (params.mihomoIpVersion !== undefined)
+                    body.mihomoIpVersion = params.mihomoIpVersion;
                 if (params.serverDescription !== undefined)
                     body.serverDescription = params.serverDescription;
                 if (params.nodes !== undefined) body.nodes = params.nodes;
@@ -153,27 +168,17 @@ export function registerHostTools(server: McpServer, client: RemnawaveClient, re
             remark: z.string().optional().describe('New remark/name'),
             address: z.string().optional().describe('New address'),
             port: z.number().optional().describe('New port'),
-            path: z.string().optional().describe('New URL path'),
-            sni: z.string().optional().describe('New SNI'),
-            host: z.string().optional().describe('New host header'),
+            path: z.string().nullish().describe('New URL path'),
+            sni: z.string().nullish().describe('New SNI'),
+            host: z.string().nullish().describe('New host header'),
             alpn: z
-                .enum(['h3', 'h2', 'http/1.1', 'h2,http/1.1', 'h3,h2,http/1.1', 'h3,h2'])
+                .enum(ALPN_VALUES)
                 .optional()
                 .describe('New ALPN'),
             fingerprint: z
-                .enum([
-                    'chrome',
-                    'firefox',
-                    'safari',
-                    'ios',
-                    'android',
-                    'edge',
-                    'qq',
-                    'random',
-                    'randomized',
-                ])
+                .string()
                 .optional()
-                .describe('New fingerprint'),
+                .describe('New TLS fingerprint (free-form)'),
             isDisabled: z
                 .boolean()
                 .optional()
@@ -182,7 +187,22 @@ export function registerHostTools(server: McpServer, client: RemnawaveClient, re
                 .enum(['DEFAULT', 'TLS', 'NONE'])
                 .optional()
                 .describe('New security layer'),
-            tag: z.string().optional().describe('New tag'),
+            tags: z
+                .array(z.string())
+                .optional()
+                .describe(TAGS_DESC),
+            pinnedPeerCertSha256: z
+                .string()
+                .nullish()
+                .describe('Pin peer certificate by SHA-256 fingerprint'),
+            verifyPeerCertByName: z
+                .string()
+                .nullish()
+                .describe('Verify peer certificate by name'),
+            mihomoIpVersion: z
+                .enum(MIHOMO_IP_VERSION)
+                .nullish()
+                .describe('IP version used by Mihomo clients'),
             serverDescription: z
                 .string()
                 .optional()
@@ -249,27 +269,52 @@ export function registerHostTools(server: McpServer, client: RemnawaveClient, re
     );
 
     server.tool(
-        'hosts_bulk_set_inbound',
-        'Bulk set inbound for selected hosts',
+        'hosts_bulk_update',
+        'Bulk update fields on selected hosts (replaces the removed set-inbound / set-port endpoints)',
         {
-            uuids: z.array(z.string()).describe('Array of host UUIDs'),
-            configProfileUuid: z.string().describe('Config profile UUID'),
-            configProfileInboundUuid: z.string().describe('Inbound UUID'),
+            uuids: z.array(z.string()).describe('Array of host UUIDs to update'),
+            port: z.number().optional().describe('New port for all selected hosts'),
+            configProfileUuid: z
+                .string()
+                .optional()
+                .describe('Config profile UUID (set together with configProfileInboundUuid to change inbound)'),
+            configProfileInboundUuid: z
+                .string()
+                .optional()
+                .describe('Inbound UUID (set together with configProfileUuid to change inbound)'),
+            sni: z.string().nullish().describe('New SNI'),
+            host: z.string().nullish().describe('New host header'),
+            path: z.string().nullish().describe('New URL path'),
+            alpn: z.enum(ALPN_VALUES).optional().describe('New ALPN'),
+            fingerprint: z.string().optional().describe('New TLS fingerprint (free-form)'),
+            securityLayer: z.enum(['DEFAULT', 'TLS', 'NONE']).optional().describe('New security layer'),
+            isDisabled: z.boolean().optional().describe('Enable/disable selected hosts'),
+            tags: z.array(z.string()).optional().describe(TAGS_DESC),
+            mihomoIpVersion: z.enum(MIHOMO_IP_VERSION).nullish().describe('IP version used by Mihomo clients'),
+            excludeFromSubscriptionTypes: z
+                .array(z.enum(SUBSCRIPTION_TYPES))
+                .optional()
+                .describe('Subscription types to exclude these hosts from'),
         },
         async (params) => {
-            try { return toolResult(await client.bulkSetHostInbound(params)); } catch (e) { return toolError(e); }
-        },
-    );
-
-    server.tool(
-        'hosts_bulk_set_port',
-        'Bulk set port for selected hosts',
-        {
-            uuids: z.array(z.string()).describe('Array of host UUIDs'),
-            port: z.number().describe('New port number'),
-        },
-        async (params) => {
-            try { return toolResult(await client.bulkSetHostPort(params)); } catch (e) { return toolError(e); }
+            try {
+                const {
+                    configProfileUuid,
+                    configProfileInboundUuid,
+                    ...rest
+                } = params;
+                const body: Record<string, unknown> = { ...rest };
+                if (
+                    configProfileUuid !== undefined &&
+                    configProfileInboundUuid !== undefined
+                ) {
+                    body.inbound = {
+                        configProfileUuid,
+                        configProfileInboundUuid,
+                    };
+                }
+                return toolResult(await client.bulkUpdateHosts(body));
+            } catch (e) { return toolError(e); }
         },
     );
 

@@ -222,12 +222,12 @@ export class RemnawaveClient {
         return this.post(REST_API.NODES.ACTIONS.DISABLE(uuid));
     }
 
-    async restartNode(uuid: string) {
-        return this.post(REST_API.NODES.ACTIONS.RESTART(uuid));
+    async restartNode(uuid: string, forceRestart = false) {
+        return this.post(REST_API.NODES.ACTIONS.RESTART(uuid), { forceRestart });
     }
 
-    async restartAllNodes() {
-        return this.post(REST_API.NODES.ACTIONS.RESTART_ALL);
+    async restartAllNodes(forceRestart = false) {
+        return this.post(REST_API.NODES.ACTIONS.RESTART_ALL, { forceRestart });
     }
 
     async resetNodeTraffic(uuid: string) {
@@ -246,7 +246,7 @@ export class RemnawaveClient {
         return this.post(REST_API.NODES.BULK_ACTIONS.ACTIONS, params);
     }
 
-    async bulkUpdateNodes(params: Record<string, unknown>) {
+    async bulkUpdateNodes(params: { uuids: string[]; fields: Record<string, unknown> }) {
         return this.post(REST_API.NODES.BULK_ACTIONS.UPDATE, params);
     }
 
@@ -288,12 +288,10 @@ export class RemnawaveClient {
         return this.post(REST_API.HOSTS.BULK.DELETE_HOSTS, params);
     }
 
-    async bulkSetHostInbound(params: Record<string, unknown>) {
-        return this.post(REST_API.HOSTS.BULK.SET_INBOUND, params);
-    }
-
-    async bulkSetHostPort(params: Record<string, unknown>) {
-        return this.post(REST_API.HOSTS.BULK.SET_PORT, params);
+    // Panel 2.8.0 replaced /bulk/set-inbound and /bulk/set-port with /bulk/update.
+    // The pinned contract 2.7.2 predates this route, so it is declared as a literal.
+    async bulkUpdateHosts(params: Record<string, unknown>) {
+        return this.patch('/api/hosts/bulk/update', params);
     }
 
     async reorderHosts(hosts: { uuid: string; viewPosition: number }[]) {
@@ -510,6 +508,24 @@ export class RemnawaveClient {
 
     async getUserBandwidthByUuid(uuid: string) {
         return this.get(REST_API.BANDWIDTH_STATS.USERS.GET_BY_UUID(uuid));
+    }
+
+    // Panel 2.8.0 added POST /api/bandwidth-stats/nodes/users (top users usage across nodes).
+    // Not present in pinned contract 2.7.2, so declared as a literal route.
+    async getUsersUsageByNodes(
+        nodesUuids: string[],
+        start: string,
+        end: string,
+        topUsersLimit?: number,
+    ) {
+        const query = new URLSearchParams({ start, end });
+        if (topUsersLimit !== undefined) {
+            query.set('topUsersLimit', String(topUsersLimit));
+        }
+        return this.post(
+            `/api/bandwidth-stats/nodes/users?${query.toString()}`,
+            { nodesUuids },
+        );
     }
 
     // Auth
