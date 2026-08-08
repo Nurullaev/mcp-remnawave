@@ -17,21 +17,15 @@ export function registerSubscriptionSettingsTools(server: McpServer, client: Rem
 
     server.tool(
         'subscription_settings_update',
-        'Update Remnawave subscription settings',
+        'Update Remnawave subscription settings (API 3.x: profile title/support link/update interval/HAPP fields moved to custom response headers)',
         {
             uuid: z.string().describe('Settings UUID (required by API)'),
-            profileTitle: z.string().optional().describe('Profile title shown to clients'),
-            supportLink: z.string().optional().describe('Support link URL'),
-            profileUpdateInterval: z.number().int().optional().describe('Profile update interval in seconds'),
-            isProfileWebpageUrlEnabled: z.boolean().optional().describe('Enable profile webpage URL'),
             serveJsonAtBaseSubscription: z.boolean().optional().describe('Serve JSON at base subscription URL'),
-            happAnnounce: z.string().nullable().optional().describe('HAPP announce URL'),
-            happRouting: z.string().nullable().optional().describe('HAPP routing configuration'),
             isShowCustomRemarks: z.boolean().optional().describe('Show custom remarks'),
             customRemarks: z.record(z.unknown()).optional().describe('Custom remarks object'),
-            customResponseHeaders: z.record(z.unknown()).optional().describe('Custom response headers'),
+            customResponseHeaders: z.record(z.unknown()).optional().describe('Custom response headers (supports {{STATUS}} and {{RESET_STRATEGY}} template variables)'),
             randomizeHosts: z.boolean().optional().describe('Randomize host order in subscriptions'),
-            responseRules: z.record(z.unknown()).optional().describe('Response rules configuration'),
+            responseRules: z.record(z.unknown()).optional().describe('Response rules configuration (supports encryption and disableHwidCheck)'),
             hwidSettings: z.record(z.unknown()).optional().describe('HWID settings configuration'),
         },
         async (params) => {

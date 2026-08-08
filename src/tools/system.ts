@@ -123,6 +123,51 @@ export function registerSystemTools(
     );
 
     server.tool(
+        'system_configuration',
+        'Get Remnawave panel configuration',
+        {},
+        async () => {
+            try {
+                const result = await client.getSystemConfiguration();
+                return toolResult(result);
+            } catch (e) {
+                return toolError(e);
+            }
+        },
+    );
+
+    server.tool(
+        'system_stats_digest',
+        'Get system statistics digest for a date-time range',
+        {
+            start: z.string().describe('Start date-time (ISO 8601, e.g. 2026-08-01T00:00:00Z)'),
+            end: z.string().describe('End date-time (ISO 8601)'),
+        },
+        async ({ start, end }) => {
+            try {
+                const result = await client.getStatsDigest(start, end);
+                return toolResult(result);
+            } catch (e) {
+                return toolError(e);
+            }
+        },
+    );
+
+    server.tool(
+        'system_stats_http',
+        'Get HTTP request statistics',
+        {},
+        async () => {
+            try {
+                const result = await client.getStatsHttp();
+                return toolResult(result);
+            } catch (e) {
+                return toolError(e);
+            }
+        },
+    );
+
+    server.tool(
         'system_generate_x25519',
         'Generate X25519 key pair for VLESS Reality',
         {},

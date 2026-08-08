@@ -12,11 +12,11 @@ export function registerHwidTools(
         'hwid_devices_list',
         'List HWID devices for a specific user',
         {
-            userUuid: z.string().describe('User UUID'),
+            userId: z.number().int().describe('User numeric ID'),
         },
-        async ({ userUuid }) => {
+        async ({ userId }) => {
             try {
-                const result = await client.getUserHwidDevices(userUuid);
+                const result = await client.getUserHwidDevices(userId);
                 return toolResult(result);
             } catch (e) {
                 return toolError(e);
@@ -72,8 +72,12 @@ export function registerHwidTools(
         'hwid_device_create',
         'Create a HWID device entry for a user',
         {
-            userUuid: z.string().describe('User UUID'),
+            userId: z.number().int().describe('User numeric ID'),
             hwid: z.string().describe('Hardware ID'),
+            platform: z.string().optional().describe('Device platform'),
+            osVersion: z.string().optional().describe('OS version'),
+            deviceModel: z.string().optional().describe('Device model'),
+            userAgent: z.string().optional().describe('User agent'),
         },
         async (params) => {
             try {
@@ -87,13 +91,14 @@ export function registerHwidTools(
 
     server.tool(
         'hwid_device_delete',
-        'Delete a specific HWID device',
+        'Delete a specific HWID device (identified by user ID + hardware ID)',
         {
-            deviceUuid: z.string().describe('HWID device UUID to delete'),
+            userId: z.number().int().describe('User numeric ID'),
+            hwid: z.string().describe('Hardware ID to delete'),
         },
-        async ({ deviceUuid }) => {
+        async ({ userId, hwid }) => {
             try {
-                const result = await client.deleteHwidDevice(deviceUuid);
+                const result = await client.deleteHwidDevice(userId, hwid);
                 return toolResult(result);
             } catch (e) {
                 return toolError(e);
@@ -105,12 +110,12 @@ export function registerHwidTools(
         'hwid_devices_delete_all',
         'Delete all HWID devices for a user',
         {
-            userUuid: z.string().describe('User UUID'),
+            userId: z.number().int().describe('User numeric ID'),
         },
-        async ({ userUuid }) => {
+        async ({ userId }) => {
             try {
                 const result =
-                    await client.deleteAllUserHwidDevices(userUuid);
+                    await client.deleteAllUserHwidDevices(userId);
                 return toolResult(result);
             } catch (e) {
                 return toolError(e);

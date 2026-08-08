@@ -8,11 +8,16 @@ export function registerApiTokenTools(server: McpServer, client: RemnawaveClient
         try { return toolResult(await client.getApiTokens()); } catch (e) { return toolError(e); }
     });
 
+    server.tool('api_tokens_scopes_list', 'List all valid API token scopes', {}, async () => {
+        try { return toolResult(await client.getApiTokenScopes()); } catch (e) { return toolError(e); }
+    });
+
     if (readonly) return;
 
-    server.tool('api_tokens_create', 'Create a new API token', {
-        tokenName: z.string().describe('Token name'),
-        tokenDescription: z.string().optional().describe('Token description'),
+    server.tool('api_tokens_create', 'Create a new API token (API 3.x: tokens are scoped)', {
+        name: z.string().describe('Token name'),
+        expiresInDays: z.number().int().describe('Token lifetime in days'),
+        scopes: z.array(z.string()).optional().describe('Token scopes (see api_tokens_scopes_list); omit for full access'),
     }, async (params) => {
         try { return toolResult(await client.createApiToken(params)); } catch (e) { return toolError(e); }
     });
