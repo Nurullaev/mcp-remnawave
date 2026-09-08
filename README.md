@@ -10,16 +10,18 @@
 
 MCP server ([Model Context Protocol](https://modelcontextprotocol.io)) providing LLM clients (Claude Desktop, Cursor, Windsurf, etc.) with tools to manage a [Remnawave](https://github.com/remnawave/) VPN panel.
 
-**Version:** 2.0.0 | **Remnawave API:** 3.2.1
+**Version:** 2.1.0 | **Remnawave API:** 3.4.3
 
-> **v2.0.0 targets Remnawave panel 3.x** (breaking API changes: numeric user IDs replace UUIDs, the connections module replaces ip-control, removed user lookups replaced by the users stream). For panels still on 2.8.0 use v1.4.0.
+> **v2.1.0 targets Remnawave panel 3.4.x.** v2.0.0 covers panel 3.0–3.2. For panels on 2.8.0 use v1.4.0.
+>
+> Panel 3.3.0+ is incompatible with nodes 3.2.3 and older — upgrade nodes alongside the panel.
 
 ### Features
 
-- **173 tools** — full management of users, nodes, hosts, subscriptions, squads, HWID, config profiles, inbounds, API tokens, billing, snippets, external squads, settings, subscription settings, subscription templates, subscription page configs, node plugins, connections, and metadata
+- **190 tools** — full management of users, nodes, hosts, subscriptions, squads, HWID, config profiles, inbounds, API tokens, billing, snippets, external squads, settings, subscription settings, subscription templates, subscription page configs, node plugins, shared lists, node integrations, tags, connections, and metadata
 - **3 resources** — real-time panel stats, node status, health checks
 - **5 prompts** — guided workflows for common tasks
-- **Readonly mode** — restrict to 80 read-only tools for safe monitoring
+- **Readonly mode** — restrict to 87 read-only tools for safe monitoring
 - **Caddy support** — `X-Api-Key` header for panels behind Caddy with custom path
 - **Type-safe** — built on [@remnawave/backend-contract](https://www.npmjs.com/package/@remnawave/backend-contract) for API route validation
 - **stdio transport** — works with Claude Desktop, Cursor, Windsurf, and any MCP-compatible client
@@ -71,7 +73,7 @@ Set `REMNAWAVE_READONLY=true` to disable all write operations (create, update, d
 
 Useful for monitoring dashboards or shared environments where you want to prevent accidental changes.
 
-In readonly mode, the available tools are reduced from 173 to 80:
+In readonly mode, the available tools are reduced from 190 to 87:
 
 | Category | Available tools |
 |----------|----------------|
@@ -92,8 +94,10 @@ In readonly mode, the available tools are reduced from 173 to 80:
 | Subscription Settings (1) | `subscription_settings_get` |
 | Subscription Templates (2) | `subscription_templates_list`, `subscription_templates_get` |
 | Sub Page Configs (2) | `sub_page_configs_list`, `sub_page_configs_get` |
-| Node Plugins (4) | `node_plugins_list`, `node_plugins_get`, `node_plugins_torrent_reports`, `node_plugins_torrent_stats` |
-| Connections (4) | `connections_fetch_by_user`, `connections_get_user_result`, `connections_fetch_by_node`, `connections_get_node_result` |
+| Node Plugins & Shared Lists (6) | `node_plugins_list`, `node_plugins_get`, `node_plugins_torrent_reports`, `node_plugins_torrent_stats`, `shared_lists_list`, `shared_lists_get` |
+| Node Integrations (2) | `node_integrations_list`, `node_integrations_get` |
+| Tags (1) | `tags_list` |
+| Connections (6) | `connections_fetch_by_user`, `connections_get_user_result`, `connections_fetch_by_node`, `connections_get_node_result`, `connections_geocheck`, `connections_get_geocheck_result` |
 | Metadata (2) | `metadata_node_get`, `metadata_user_get` |
 
 ### Usage with Claude Desktop
@@ -193,8 +197,8 @@ All user tools use the numeric user `id` (API 3.x removed user UUIDs).
 | `nodes_list` | List all nodes | read |
 | `nodes_get` | Get node by UUID | read |
 | `nodes_tags_list` | List all node tags | read |
-| `nodes_create` | Create a new node | write |
-| `nodes_update` | Update node settings | write |
+| `nodes_create` | Create a new node (incl. integrationUuids, ips) | write |
+| `nodes_update` | Update node settings (incl. integrationUuids, ips) | write |
 | `nodes_delete` | Delete a node | write |
 | `nodes_enable` | Enable a node | write |
 | `nodes_disable` | Disable a node | write |
@@ -213,8 +217,8 @@ All user tools use the numeric user `id` (API 3.x removed user UUIDs).
 | `hosts_list` | List all hosts | read |
 | `hosts_get` | Get host by UUID | read |
 | `hosts_tags_list` | List all host tags | read |
-| `hosts_create` | Create a new host (tags, cert pinning, mihomoIpVersion) | write |
-| `hosts_update` | Update host settings (tags, cert pinning, mihomoIpVersion) | write |
+| `hosts_create` | Create a new host (tags, cert pinning, mihomoIpVersion, internalSquads, mapper) | write |
+| `hosts_update` | Update host settings (tags, cert pinning, mihomoIpVersion, internalSquads, mapper) | write |
 | `hosts_delete` | Delete a host | write |
 | `hosts_bulk_enable` | Bulk enable hosts | write |
 | `hosts_bulk_disable` | Bulk disable hosts | write |
@@ -330,7 +334,7 @@ All user tools use the numeric user `id` (API 3.x removed user UUIDs).
 | `billing_history_create` | Create billing history entry | write |
 | `billing_history_delete` | Delete billing history entry | write |
 
-#### Snippets (4 tools)
+#### Snippets (5 tools)
 
 | Tool | Description | Mode |
 |------|-------------|------|
@@ -338,6 +342,7 @@ All user tools use the numeric user `id` (API 3.x removed user UUIDs).
 | `snippets_create` | Create snippet | write |
 | `snippets_update` | Update snippet | write |
 | `snippets_delete` | Delete snippet | write |
+| `snippets_sync` | Sync snippet to config profiles using it | write |
 
 #### External Squads (8 tools)
 
@@ -389,7 +394,7 @@ All user tools use the numeric user `id` (API 3.x removed user UUIDs).
 | `sub_page_configs_reorder` | Reorder subscription page configs | write |
 | `sub_page_configs_clone` | Clone subscription page config | write |
 
-#### Node Plugins (11 tools)
+#### Node Plugins & Shared Lists (18 tools)
 
 | Tool | Description | Mode |
 |------|-------------|------|
@@ -397,15 +402,41 @@ All user tools use the numeric user `id` (API 3.x removed user UUIDs).
 | `node_plugins_get` | Get node plugin by UUID | read |
 | `node_plugins_torrent_reports` | Get torrent blocker reports | read |
 | `node_plugins_torrent_stats` | Get torrent blocker stats | read |
+| `shared_lists_list` | List shared lists | read |
+| `shared_lists_get` | Get shared list by name | read |
 | `node_plugins_create` | Create node plugin | write |
 | `node_plugins_update` | Update node plugin | write |
 | `node_plugins_delete` | Delete node plugin | write |
 | `node_plugins_reorder` | Reorder node plugins | write |
 | `node_plugins_clone` | Clone node plugin | write |
 | `node_plugins_execute` | Execute node plugin | write |
+| `node_plugins_sync` | Sync a plugin to its nodes | write |
 | `node_plugins_torrent_truncate` | Truncate torrent blocker reports | write |
+| `shared_lists_create` | Create shared list | write |
+| `shared_lists_update` | Update shared list | write |
+| `shared_lists_delete` | Delete shared list by name | write |
+| `shared_lists_sync` | Sync shared list to nodes | write |
 
-#### Connections (5 tools)
+#### Node Integrations (5 tools)
+
+| Tool | Description | Mode |
+|------|-------------|------|
+| `node_integrations_list` | List node integrations | read |
+| `node_integrations_get` | Get integration by UUID | read |
+| `node_integrations_create` | Create integration | write |
+| `node_integrations_update` | Update integration | write |
+| `node_integrations_delete` | Delete integration | write |
+
+#### Tags (2 tools)
+
+Covers config profiles, internal/external squads, node plugins, subscription page configs and subscription templates. Users, nodes and hosts keep their own `*_tags_list` tools.
+
+| Tool | Description | Mode |
+|------|-------------|------|
+| `tags_list` | List tags used in a domain | read |
+| `tags_assign` | Replace tags of one entity | write |
+
+#### Connections (7 tools)
 
 | Tool | Description | Mode |
 |------|-------------|------|
@@ -413,6 +444,8 @@ All user tools use the numeric user `id` (API 3.x removed user UUIDs).
 | `connections_get_user_result` | Get user connections job result | read |
 | `connections_fetch_by_node` | Fetch node connections (async job) | read |
 | `connections_get_node_result` | Get node connections job result | read |
+| `connections_geocheck` | Run geolocation check from a node (needs node 3.3.0+) | read |
+| `connections_get_geocheck_result` | Get geocheck job result | read |
 | `connections_drop` | Drop connections by user IDs or IPs | write |
 
 #### Metadata (4 tools)
@@ -478,13 +511,15 @@ src/
 │   ├── squads.ts                  # Internal squads (11 tools)
 │   ├── hwid.ts                    # HWID devices (7 tools)
 │   ├── infra-billing.ts           # Infrastructure billing (12 tools)
-│   ├── node-plugins.ts            # Node plugins (11 tools)
+│   ├── node-plugins.ts            # Node plugins & shared lists (18 tools)
 │   ├── external-squads.ts         # External squads (8 tools)
 │   ├── subscription-page-configs.ts # Subscription page configs (7 tools)
 │   ├── subscription-settings.ts  # Subscription settings (2 tools)
 │   ├── subscription-templates.ts # Subscription templates (6 tools)
-│   ├── connections.ts             # Connections (5 tools)
-│   ├── snippets.ts                # Snippets (4 tools)
+│   ├── connections.ts             # Connections (7 tools)
+│   ├── node-integrations.ts       # Node integrations (5 tools)
+│   ├── tags.ts                    # Domain tags (2 tools)
+│   ├── snippets.ts                # Snippets (5 tools)
 │   ├── metadata.ts                # Node & user metadata (4 tools)
 │   ├── api-tokens.ts              # API tokens (4 tools)
 │   ├── settings.ts                # Panel settings (2 tools)
@@ -507,16 +542,18 @@ MIT
 
 MCP-сервер ([Model Context Protocol](https://modelcontextprotocol.io)), предоставляющий LLM-клиентам (Claude Desktop, Cursor, Windsurf и др.) инструменты для управления VPN-панелью [Remnawave](https://github.com/remnawave/).
 
-**Версия:** 2.0.0 | **Remnawave API:** 3.2.1
+**Версия:** 2.1.0 | **Remnawave API:** 3.4.3
 
-> **v2.0.0 рассчитана на панель Remnawave 3.x** (breaking-изменения API: числовые ID пользователей вместо UUID, модуль connections вместо ip-control, удалённые лукапы заменены стримом пользователей). Для панелей на 2.8.0 используйте v1.4.0.
+> **v2.1.0 рассчитана на панель Remnawave 3.4.x.** v2.0.0 покрывает панель 3.0–3.2. Для панелей на 2.8.0 используйте v1.4.0.
+>
+> Панель 3.3.0+ несовместима с нодами 3.2.3 и старше — обновляйте ноды вместе с панелью.
 
 ### Возможности
 
-- **173 инструмента** — полное управление пользователями, нодами, хостами, подписками, группами, HWID, конфиг-профилями, inbounds, API-токенами, биллингом, сниппетами, внешними группами, настройками, настройками подписок, шаблонами подписок, страницами подписок, плагинами нод, соединениями и метаданными
+- **190 инструментов** — полное управление пользователями, нодами, хостами, подписками, группами, HWID, конфиг-профилями, inbounds, API-токенами, биллингом, сниппетами, внешними группами, настройками, настройками подписок, шаблонами подписок, страницами подписок, плагинами нод, shared lists, интеграциями нод, тегами, соединениями и метаданными
 - **3 ресурса** — статистика панели, статус нод, проверка здоровья в реальном времени
 - **5 промптов** — пошаговые сценарии для типичных задач
-- **Readonly-режим** — ограничение до 80 инструментов только для чтения
+- **Readonly-режим** — ограничение до 87 инструментов только для чтения
 - **Поддержка Caddy** — заголовок `X-Api-Key` для панелей за Caddy с кастомным путём
 - **Type-safe** — построен на [@remnawave/backend-contract](https://www.npmjs.com/package/@remnawave/backend-contract) для валидации API-маршрутов
 - **stdio транспорт** — работает с Claude Desktop, Cursor, Windsurf и любым MCP-совместимым клиентом
@@ -568,7 +605,7 @@ REMNAWAVE_API_KEY=ваш-caddy-api-ключ
 
 Полезно для мониторинговых дашбордов или общих окружений, где нужно исключить случайные изменения.
 
-В readonly-режиме количество доступных инструментов сокращается со 173 до 80:
+В readonly-режиме количество доступных инструментов сокращается со 190 до 87:
 
 | Категория | Доступные инструменты |
 |-----------|----------------------|
@@ -589,8 +626,10 @@ REMNAWAVE_API_KEY=ваш-caddy-api-ключ
 | Настройки подписок (1) | `subscription_settings_get` |
 | Шаблоны подписок (2) | `subscription_templates_list`, `subscription_templates_get` |
 | Страницы подписок (2) | `sub_page_configs_list`, `sub_page_configs_get` |
-| Плагины нод (4) | `node_plugins_list`, `node_plugins_get`, `node_plugins_torrent_reports`, `node_plugins_torrent_stats` |
-| Соединения (4) | `connections_fetch_by_user`, `connections_get_user_result`, `connections_fetch_by_node`, `connections_get_node_result` |
+| Плагины нод и shared lists (6) | `node_plugins_list`, `node_plugins_get`, `node_plugins_torrent_reports`, `node_plugins_torrent_stats`, `shared_lists_list`, `shared_lists_get` |
+| Интеграции нод (2) | `node_integrations_list`, `node_integrations_get` |
+| Теги (1) | `tags_list` |
+| Соединения (6) | `connections_fetch_by_user`, `connections_get_user_result`, `connections_fetch_by_node`, `connections_get_node_result`, `connections_geocheck`, `connections_get_geocheck_result` |
 | Метаданные (2) | `metadata_node_get`, `metadata_user_get` |
 
 ### Использование с Claude Desktop
@@ -690,8 +729,8 @@ docker compose up -d
 | `nodes_list` | Список всех нод | read |
 | `nodes_get` | Получить ноду по UUID | read |
 | `nodes_tags_list` | Список тегов нод | read |
-| `nodes_create` | Создать новую ноду | write |
-| `nodes_update` | Обновить настройки ноды | write |
+| `nodes_create` | Создать новую ноду (вкл. integrationUuids, ips) | write |
+| `nodes_update` | Обновить настройки ноды (вкл. integrationUuids, ips) | write |
 | `nodes_delete` | Удалить ноду | write |
 | `nodes_enable` | Включить ноду | write |
 | `nodes_disable` | Отключить ноду | write |
@@ -710,8 +749,8 @@ docker compose up -d
 | `hosts_list` | Список всех хостов | read |
 | `hosts_get` | Получить хост по UUID | read |
 | `hosts_tags_list` | Список тегов хостов | read |
-| `hosts_create` | Создать новый хост (tags, cert pinning, mihomoIpVersion) | write |
-| `hosts_update` | Обновить настройки хоста (tags, cert pinning, mihomoIpVersion) | write |
+| `hosts_create` | Создать новый хост (tags, cert pinning, mihomoIpVersion, internalSquads, mapper) | write |
+| `hosts_update` | Обновить настройки хоста (tags, cert pinning, mihomoIpVersion, internalSquads, mapper) | write |
 | `hosts_delete` | Удалить хост | write |
 | `hosts_bulk_enable` | Массовое включение хостов | write |
 | `hosts_bulk_disable` | Массовое отключение хостов | write |
@@ -827,7 +866,7 @@ docker compose up -d
 | `billing_history_create` | Создать запись истории | write |
 | `billing_history_delete` | Удалить запись истории | write |
 
-#### Сниппеты (4 инструмента)
+#### Сниппеты (5 инструментов)
 
 | Инструмент | Описание | Режим |
 |------------|----------|-------|
@@ -835,6 +874,7 @@ docker compose up -d
 | `snippets_create` | Создать сниппет | write |
 | `snippets_update` | Обновить сниппет | write |
 | `snippets_delete` | Удалить сниппет | write |
+| `snippets_sync` | Синхронизировать сниппет с использующими его профилями | write |
 
 #### Внешние группы (8 инструментов)
 
@@ -886,7 +926,7 @@ docker compose up -d
 | `sub_page_configs_reorder` | Переупорядочить | write |
 | `sub_page_configs_clone` | Клонировать конфиг | write |
 
-#### Плагины нод (11 инструментов)
+#### Плагины нод и shared lists (18 инструментов)
 
 | Инструмент | Описание | Режим |
 |------------|----------|-------|
@@ -894,15 +934,41 @@ docker compose up -d
 | `node_plugins_get` | Получить плагин по UUID | read |
 | `node_plugins_torrent_reports` | Отчёты торрент-блокировщика | read |
 | `node_plugins_torrent_stats` | Статистика торрент-блокировщика | read |
+| `shared_lists_list` | Список shared lists | read |
+| `shared_lists_get` | Получить shared list по имени | read |
 | `node_plugins_create` | Создать плагин | write |
 | `node_plugins_update` | Обновить плагин | write |
 | `node_plugins_delete` | Удалить плагин | write |
 | `node_plugins_reorder` | Переупорядочить плагины | write |
 | `node_plugins_clone` | Клонировать плагин | write |
 | `node_plugins_execute` | Выполнить плагин | write |
+| `node_plugins_sync` | Синхронизировать плагин с нодами | write |
 | `node_plugins_torrent_truncate` | Очистить отчёты торрент-блокировщика | write |
+| `shared_lists_create` | Создать shared list | write |
+| `shared_lists_update` | Обновить shared list | write |
+| `shared_lists_delete` | Удалить shared list по имени | write |
+| `shared_lists_sync` | Синхронизировать shared list с нодами | write |
 
-#### Соединения (5 инструментов)
+#### Интеграции нод (5 инструментов)
+
+| Инструмент | Описание | Режим |
+|------------|----------|-------|
+| `node_integrations_list` | Список интеграций | read |
+| `node_integrations_get` | Получить интеграцию по UUID | read |
+| `node_integrations_create` | Создать интеграцию | write |
+| `node_integrations_update` | Обновить интеграцию | write |
+| `node_integrations_delete` | Удалить интеграцию | write |
+
+#### Теги (2 инструмента)
+
+Покрывают конфиг-профили, внутренние/внешние группы, плагины нод, страницы подписок и шаблоны подписок. У пользователей, нод и хостов свои `*_tags_list`.
+
+| Инструмент | Описание | Режим |
+|------------|----------|-------|
+| `tags_list` | Список тегов домена | read |
+| `tags_assign` | Заменить теги сущности | write |
+
+#### Соединения (7 инструментов)
 
 | Инструмент | Описание | Режим |
 |------------|----------|-------|
@@ -910,6 +976,8 @@ docker compose up -d
 | `connections_get_user_result` | Результат задачи по пользователю | read |
 | `connections_fetch_by_node` | Получить соединения на ноде (async-задача) | read |
 | `connections_get_node_result` | Результат задачи по ноде | read |
+| `connections_geocheck` | Геопроверка с ноды (нужна нода 3.3.0+) | read |
+| `connections_get_geocheck_result` | Результат геопроверки | read |
 | `connections_drop` | Сбросить соединения по ID пользователей или IP | write |
 
 #### Метаданные (4 инструмента)
@@ -975,13 +1043,15 @@ src/
 │   ├── squads.ts                  # Внутренние группы (11)
 │   ├── hwid.ts                    # HWID-устройства (7)
 │   ├── infra-billing.ts           # Биллинг инфраструктуры (12)
-│   ├── node-plugins.ts            # Плагины нод (11)
+│   ├── node-plugins.ts            # Плагины нод и shared lists (18)
 │   ├── external-squads.ts         # Внешние группы (8)
 │   ├── subscription-page-configs.ts # Страницы подписок (7)
 │   ├── subscription-settings.ts  # Настройки подписок (2)
 │   ├── subscription-templates.ts # Шаблоны подписок (6)
-│   ├── connections.ts             # Соединения (5)
-│   ├── snippets.ts                # Сниппеты (4)
+│   ├── connections.ts             # Соединения (7)
+│   ├── node-integrations.ts       # Интеграции нод (5)
+│   ├── tags.ts                    # Теги доменов (2)
+│   ├── snippets.ts                # Сниппеты (5)
 │   ├── metadata.ts                # Метаданные нод и пользователей (4)
 │   ├── api-tokens.ts              # API-токены (4)
 │   ├── settings.ts                # Настройки панели (2)

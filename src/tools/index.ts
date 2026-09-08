@@ -17,6 +17,8 @@ import { registerSettingsTools } from './settings.js';
 import { registerSubPageConfigTools } from './subscription-page-configs.js';
 import { registerNodePluginTools } from './node-plugins.js';
 import { registerConnectionTools } from './connections.js';
+import { registerNodeIntegrationTools } from './node-integrations.js';
+import { registerTagTools } from './tags.js';
 import { registerMetadataTools } from './metadata.js';
 import { registerSubscriptionSettingsTools } from './subscription-settings.js';
 import { registerSubscriptionTemplateTools } from './subscription-templates.js';
@@ -39,6 +41,8 @@ export function registerAllTools(server: McpServer, client: RemnawaveClient, rea
     registerSubPageConfigTools(server, client, readonly);
     registerNodePluginTools(server, client, readonly);
     registerConnectionTools(server, client, readonly);
+    registerNodeIntegrationTools(server, client, readonly);
+    registerTagTools(server, client, readonly);
     registerMetadataTools(server, client, readonly);
     registerSubscriptionSettingsTools(server, client, readonly);
     registerSubscriptionTemplateTools(server, client, readonly);

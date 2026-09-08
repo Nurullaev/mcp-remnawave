@@ -30,4 +30,10 @@ export function registerSnippetTools(server: McpServer, client: RemnawaveClient,
     }, async (params) => {
         try { return toolResult(await client.deleteSnippet(params)); } catch (e) { return toolError(e); }
     });
+
+    server.tool('snippets_sync', 'Sync a snippet to the config profiles using it (async, 202)', {
+        name: z.string().describe('Snippet name to sync'),
+    }, async ({ name }) => {
+        try { return toolResult(await client.syncSnippet(name)); } catch (e) { return toolError(e); }
+    });
 }

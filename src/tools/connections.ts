@@ -28,6 +28,25 @@ export function registerConnectionTools(server: McpServer, client: RemnawaveClie
         try { return toolResult(await client.getConnectionsByNodeResult(jobId)); } catch (e) { return toolError(e); }
     });
 
+    server.tool('connections_geocheck', 'Run a geolocation check from a node (async job; requires node 3.3.0+)', {
+        nodeUuid: z.string().describe('Node UUID to run the check from'),
+        ip: z.string().optional().describe('IP address to check (defaults to the node outbound IP)'),
+        interface: z.string().optional().describe('Network interface to use'),
+    }, async ({ nodeUuid, ip, interface: iface }) => {
+        try {
+            const body: Record<string, unknown> = {};
+            if (ip !== undefined) body.ip = ip;
+            if (iface !== undefined) body.interface = iface;
+            return toolResult(await client.geocheckByNode(nodeUuid, body));
+        } catch (e) { return toolError(e); }
+    });
+
+    server.tool('connections_get_geocheck_result', 'Get result of a geocheck job', {
+        jobId: z.string().describe('Job ID from connections_geocheck'),
+    }, async ({ jobId }) => {
+        try { return toolResult(await client.getGeocheckResult(jobId)); } catch (e) { return toolError(e); }
+    });
+
     if (readonly) return;
 
     server.tool('connections_drop', 'Drop active connections by user IDs or IP addresses on all or specific nodes (async, 202)', {

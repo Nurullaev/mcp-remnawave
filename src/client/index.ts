@@ -540,8 +540,27 @@ export class RemnawaveClient {
         return this.get(REST_API.BANDWIDTH_STATS.NODES.GET);
     }
 
-    async getNodesRealtimeBandwidth() {
-        return this.get(REST_API.BANDWIDTH_STATS.NODES.GET_REALTIME);
+    // Tag listing/assignment for domains added in panel 3.4.x. The 3.4.3 contract
+    // does not expose these routes, so they are declared as literals (verified live).
+    private static readonly TAG_ROUTES = {
+        'config-profiles': '/api/config-profiles/tags',
+        'internal-squads': '/api/internal-squads/tags',
+        'external-squads': '/api/external-squads/tags',
+        'node-plugins': '/api/node-plugins/tags',
+        'subscription-page-configs': '/api/subscription-page-configs/tags',
+        'subscription-templates': '/api/subscription-templates/tags',
+    } as const;
+
+    async getDomainTags(domain: keyof typeof RemnawaveClient.TAG_ROUTES) {
+        return this.get(RemnawaveClient.TAG_ROUTES[domain]);
+    }
+
+    async setDomainTags(
+        domain: keyof typeof RemnawaveClient.TAG_ROUTES,
+        uuid: string,
+        tags: string[],
+    ) {
+        return this.patch(RemnawaveClient.TAG_ROUTES[domain], { uuid, tags });
     }
 
     async getUserBandwidthById(userId: number) {
@@ -675,6 +694,10 @@ export class RemnawaveClient {
         return this.request('DELETE', REST_API.SNIPPETS.DELETE as string, { name: params.name });
     }
 
+    async syncSnippet(name: string) {
+        return this.post(REST_API.SNIPPETS.ACTIONS.SYNC, { name });
+    }
+
     // External Squads
 
     async getExternalSquads() {
@@ -797,6 +820,60 @@ export class RemnawaveClient {
         return this.post(REST_API.NODE_PLUGINS.TORRENT_BLOCKER.TRUNCATE_REPORTS);
     }
 
+    async syncNodePlugin(uuid: string) {
+        return this.post(REST_API.NODE_PLUGINS.ACTIONS.SYNC, { uuid });
+    }
+
+    // Shared lists (split out of node plugins in panel 3.3.0). Addressed by name:
+    // the contract's uuid-path variants 404 on the live panel.
+    async getSharedLists() {
+        return this.get(REST_API.NODE_PLUGINS.SHARED_LISTS.GET_ALL);
+    }
+
+    async getSharedListByName(name: string) {
+        return this.get(
+            `/api/node-plugins/shared-lists/by-name?name=${encodeURIComponent(name)}`,
+        );
+    }
+
+    async createSharedList(params: Record<string, unknown>) {
+        return this.post(REST_API.NODE_PLUGINS.SHARED_LISTS.CREATE, params);
+    }
+
+    async updateSharedList(params: Record<string, unknown>) {
+        return this.patch(REST_API.NODE_PLUGINS.SHARED_LISTS.UPDATE, params);
+    }
+
+    async deleteSharedList(name: string) {
+        return this.request('DELETE', '/api/node-plugins/shared-lists', { name });
+    }
+
+    async syncSharedList(name: string) {
+        return this.post(REST_API.NODE_PLUGINS.SHARED_LISTS.ACTIONS.SYNC, { name });
+    }
+
+    // Node Integrations (panel 3.4.x)
+
+    async getNodeIntegrations() {
+        return this.get(REST_API.NODE_INTEGRATIONS.GET_ALL);
+    }
+
+    async getNodeIntegration(uuid: string) {
+        return this.get(REST_API.NODE_INTEGRATIONS.GET(uuid));
+    }
+
+    async createNodeIntegration(params: Record<string, unknown>) {
+        return this.post(REST_API.NODE_INTEGRATIONS.CREATE, params);
+    }
+
+    async updateNodeIntegration(params: Record<string, unknown>) {
+        return this.patch(REST_API.NODE_INTEGRATIONS.UPDATE, params);
+    }
+
+    async deleteNodeIntegration(uuid: string) {
+        return this.delete(REST_API.NODE_INTEGRATIONS.DELETE(uuid));
+    }
+
     // Connections (API 3.x replacement for the ip-control module)
 
     async fetchConnectionsByUser(userId: number) {
@@ -817,6 +894,15 @@ export class RemnawaveClient {
 
     async dropConnections(params: Record<string, unknown>) {
         return this.post(REST_API.CONNECTIONS.DROP_CONNECTIONS, params);
+    }
+
+    // Geocheck (panel 3.4.x; requires node 3.3.0+)
+    async geocheckByNode(nodeUuid: string, params: Record<string, unknown>) {
+        return this.post(REST_API.CONNECTIONS.GEOCHECK_BY_NODE(nodeUuid), params);
+    }
+
+    async getGeocheckResult(jobId: string) {
+        return this.get(REST_API.CONNECTIONS.GEOCHECK_BY_NODE_RESULT(jobId));
     }
 
     // Metadata

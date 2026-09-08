@@ -3,6 +3,11 @@ import { z } from 'zod';
 import { RemnawaveClient } from '../client/index.js';
 import { toolResult, toolError } from './helpers.js';
 
+const NODE_IP_STATUSES = [
+    'INBOUND', 'OUTBOUND', 'MANAGEMENT', 'TRANSIT', 'MONITORING',
+    'RESERVE', 'BLOCKED', 'FLAGGED', 'DEPRECATED', 'UNKNOWN',
+] as const;
+
 export function registerNodeTools(server: McpServer, client: RemnawaveClient, readonly: boolean) {
     server.tool(
         'nodes_list',
@@ -93,6 +98,23 @@ export function registerNodeTools(server: McpServer, client: RemnawaveClient, re
                 .string()
                 .optional()
                 .describe('SOCKS5 proxy URL: socks5://[user:pass@]host:port'),
+            integrationUuids: z
+                .array(z.string())
+                .max(20)
+                .optional()
+                .describe('Node integration UUIDs to attach (see node_integrations_list)'),
+            ips: z
+                .array(
+                    z.object({
+                        ip: z.string().describe('IPv4 or IPv6 address'),
+                        status: z
+                            .enum(NODE_IP_STATUSES)
+                            .describe('Role of this address on the node'),
+                    }),
+                )
+                .max(64)
+                .optional()
+                .describe('Declared node IP addresses with their roles'),
             activeConfigProfileUuid: z
                 .string()
                 .describe('Config profile UUID to assign'),
@@ -129,6 +151,9 @@ export function registerNodeTools(server: McpServer, client: RemnawaveClient, re
                     body.nodeConsumptionMultiplier = params.nodeConsumptionMultiplier;
                 if (params.note !== undefined) body.note = params.note;
                 if (params.proxyUrl !== undefined) body.proxyUrl = params.proxyUrl;
+                if (params.integrationUuids !== undefined)
+                    body.integrationUuids = params.integrationUuids;
+                if (params.ips !== undefined) body.ips = params.ips;
 
                 const result = await client.createNode(body);
                 return toolResult(result);
@@ -181,6 +206,23 @@ export function registerNodeTools(server: McpServer, client: RemnawaveClient, re
                 .nullable()
                 .optional()
                 .describe('SOCKS5 proxy URL: socks5://[user:pass@]host:port (null to clear)'),
+            integrationUuids: z
+                .array(z.string())
+                .max(20)
+                .optional()
+                .describe('Node integration UUIDs to attach (see node_integrations_list)'),
+            ips: z
+                .array(
+                    z.object({
+                        ip: z.string().describe('IPv4 or IPv6 address'),
+                        status: z
+                            .enum(NODE_IP_STATUSES)
+                            .describe('Role of this address on the node'),
+                    }),
+                )
+                .max(64)
+                .optional()
+                .describe('Declared node IP addresses with their roles'),
         },
         async (params) => {
             try {

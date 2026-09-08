@@ -9,6 +9,25 @@ const MIHOMO_IP_VERSION = ['dual', 'ipv4', 'ipv6', 'ipv4-prefer', 'ipv6-prefer']
 const TAGS_DESC =
     'Array of tags (uppercase letters, numbers, underscores and colons only; max 36 chars each, up to 10 tags)';
 
+// Panel 3.4.0 replaced `excludedInternalSquads` with a mode + squad list.
+const internalSquadsSchema = z
+    .object({
+        mode: z.enum(['EXCLUDE', 'ALLOW_ONLY']).describe('EXCLUDE hides the host from the listed squads; ALLOW_ONLY shows it only to them'),
+        squads: z.array(z.string()).describe('Internal squad UUIDs'),
+    })
+    .describe('Which internal squads may see this host (replaces excludedInternalSquads)');
+
+// Panel 3.4.0: per-host operations applied to the generated outbound, per client format.
+const mapperOps = z.array(z.record(z.unknown()));
+const mapperSchema = z
+    .object({
+        xrayJson: mapperOps.optional(),
+        mihomo: mapperOps.optional(),
+        base64: mapperOps.optional(),
+        singbox: mapperOps.optional(),
+    })
+    .describe('Outbound field operations per client format. Each op is {op:"copy",from,to} | {op:"set",value,to} | {op:"unset",to}');
+
 export function registerHostTools(server: McpServer, client: RemnawaveClient, readonly: boolean) {
     server.tool(
         'hosts_list',
@@ -112,6 +131,8 @@ export function registerHostTools(server: McpServer, client: RemnawaveClient, re
                 .array(z.string())
                 .optional()
                 .describe('Array of node UUIDs to assign'),
+            internalSquads: internalSquadsSchema.optional(),
+            mapper: mapperSchema.optional(),
             excludeFromSubscriptionTypes: z
                 .array(z.enum(SUBSCRIPTION_TYPES))
                 .optional()
@@ -149,6 +170,9 @@ export function registerHostTools(server: McpServer, client: RemnawaveClient, re
                 if (params.serverDescription !== undefined)
                     body.serverDescription = params.serverDescription;
                 if (params.nodes !== undefined) body.nodes = params.nodes;
+                if (params.internalSquads !== undefined)
+                    body.internalSquads = params.internalSquads;
+                if (params.mapper !== undefined) body.mapper = params.mapper;
                 if (params.excludeFromSubscriptionTypes !== undefined)
                     body.excludeFromSubscriptionTypes = params.excludeFromSubscriptionTypes;
 
@@ -207,6 +231,8 @@ export function registerHostTools(server: McpServer, client: RemnawaveClient, re
                 .string()
                 .optional()
                 .describe('New server description'),
+            internalSquads: internalSquadsSchema.optional(),
+            mapper: mapperSchema.optional(),
             excludeFromSubscriptionTypes: z
                 .array(z.enum(SUBSCRIPTION_TYPES))
                 .optional()
@@ -290,6 +316,8 @@ export function registerHostTools(server: McpServer, client: RemnawaveClient, re
             securityLayer: z.enum(['DEFAULT', 'TLS', 'NONE']).optional().describe('New security layer'),
             isDisabled: z.boolean().optional().describe('Enable/disable selected hosts'),
             tags: z.array(z.string()).optional().describe(TAGS_DESC),
+            internalSquads: internalSquadsSchema.optional(),
+            mapper: mapperSchema.optional(),
             mihomoIpVersion: z.enum(MIHOMO_IP_VERSION).nullish().describe('IP version used by Mihomo clients'),
             excludeFromSubscriptionTypes: z
                 .array(z.enum(SUBSCRIPTION_TYPES))
