@@ -310,6 +310,12 @@ export class RemnawaveClient {
         return this.post(REST_API.HOSTS.ACTIONS.REORDER, { hosts });
     }
 
+    // Panel 3.4.7 added host cloning; the 3.4.7 contract omits the route
+    // (HOSTS.ACTIONS only carries REORDER), so it is declared as a literal.
+    async cloneHost(cloneFromUuid: string) {
+        return this.post('/api/hosts/actions/clone', { cloneFromUuid });
+    }
+
     // System
 
     async getStats() {

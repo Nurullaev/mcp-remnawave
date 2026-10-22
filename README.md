@@ -2,7 +2,7 @@
 
 MCP-сервер ([Model Context Protocol](https://modelcontextprotocol.io)) для управления VPN-панелью [Remnawave](https://github.com/remnawave/) из Claude Desktop, Cursor, Windsurf и любого MCP-клиента.
 
-**v2.1.0** · Remnawave API **3.4.3** · **190 инструментов** (87 в readonly) · 3 ресурса · 5 промптов
+**v2.2.0** · Remnawave API **3.4.7** · **191 инструмент** (87 в readonly) · 3 ресурса · 5 промптов
 
 > Рассчитан на панель **3.4.x**. Для панели 3.0–3.2 — v2.0.0, для 2.8.0 — v1.4.0.
 > Панель 3.3.0+ требует ноды 3.3.0+ — обновляйте ноды вместе с панелью.
@@ -23,7 +23,7 @@ cd mcp-remnawave && npm install && npm run build
 | `REMNAWAVE_BASE_URL` | да | URL панели, например `https://vpn.example.com` |
 | `REMNAWAVE_API_TOKEN` | да | API-токен из настроек панели |
 | `REMNAWAVE_API_KEY` | нет | Доп. ключ для панели за Caddy с кастомным путём — уходит в `X-Api-Key` |
-| `REMNAWAVE_READONLY` | нет | `true` отключает все пишущие инструменты (190 → 87) |
+| `REMNAWAVE_READONLY` | нет | `true` отключает все пишущие инструменты (191 → 87) |
 
 За [Caddy с кастомным путём](https://docs.remnawave.com/docs/security/caddy-with-custom-path/) путь указывается прямо в base URL: `REMNAWAVE_BASE_URL=https://example.com/secret-path/api`.
 
@@ -57,7 +57,7 @@ Docker: `npm run build && docker compose up -d` (переменные через
 | Ноды | 15 | | Соединения | 7 |
 | Система и статистика | 14 | | Шаблоны подписок | 6 |
 | Биллинг инфраструктуры | 12 | | Сниппеты | 5 |
-| Хосты | 11 | | Интеграции нод | 5 |
+| Хосты | 12 | | Интеграции нод | 5 |
 | Внутренние группы | 11 | | API-токены | 4 |
 | Подписки | 10 | | Метаданные | 4 |
 | Конфиг-профили и inbounds | 9 | | Настройки / Настройки подписок | 2 + 2 |

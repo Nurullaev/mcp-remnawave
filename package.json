@@ -1,6 +1,6 @@
 {
   "name": "remnawave-mcp",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "MCP server for Remnawave proxy management panel",
   "type": "module",
   "bin": {
@@ -22,7 +22,7 @@
   "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.12.1",
-    "@remnawave/backend-contract": "3.4.3",
+    "@remnawave/backend-contract": "3.4.7",
     "zod": "^3.25.76"
   },
   "devDependencies": {

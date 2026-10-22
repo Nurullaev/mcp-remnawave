@@ -347,6 +347,17 @@ export function registerHostTools(server: McpServer, client: RemnawaveClient, re
     );
 
     server.tool(
+        'hosts_clone',
+        'Clone an existing host into a new one',
+        {
+            cloneFromUuid: z.string().describe('UUID of the host to clone'),
+        },
+        async ({ cloneFromUuid }) => {
+            try { return toolResult(await client.cloneHost(cloneFromUuid)); } catch (e) { return toolError(e); }
+        },
+    );
+
+    server.tool(
         'hosts_reorder',
         'Reorder hosts by providing each host UUID with its new position',
         {
